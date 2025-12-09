@@ -1,3 +1,6 @@
+#user upload the resume and job desc , 
+# the system will build a modern resume based on JD 
+
 import pdfplumber
 import google.generativeai as genai
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -7,12 +10,12 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib import colors
 import json
 import re
+from dotenv import load_dotenv
+import os
+load_dotenv()
+api_key = os.getenv("API_KEY")
+genai.configure(api_key=api_key)
 
-
-# ------------------------
-# GEMINI CONFIG
-# ------------------------
-genai.configure(api_key="AIzaSyBs9JPqB5FgPTAxSk0Xd75QrMLwmfhI81Q")
 model = genai.GenerativeModel("gemini-2.0-flash")
 
 
@@ -163,11 +166,6 @@ Job Description:
 
     response = model.generate_content(prompt)
     return response.text
-
-
-# ------------------------
-# PDF GENERATOR (Styled)
-# ------------------------
 
 
 

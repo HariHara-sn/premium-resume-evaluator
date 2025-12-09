@@ -2,7 +2,11 @@
 # # from fastapi import FastAPI, Form
 # # from pydantic import BaseModel
 # # from google import generativeai as genai
-# # genai.configure(api_key="AIzaSyBs9JPqB5FgPTAxSk0Xd75QrMLwmfhI81Q")
+# from dotenv import load_dotenv
+# import os
+# load_dotenv()
+# api_key = os.getenv("API_KEY")
+# genai.configure(api_key=api_key)
 
 # # model = genai.GenerativeModel("models/gemini-2.5-flash")
 
@@ -34,12 +38,12 @@ from typing import List
 from fastapi import FastAPI, File, UploadFile, Form
 from pydantic import BaseModel
 import pdfplumber
+from dotenv import load_dotenv
 import google.generativeai as genai
 
-# ---------------------------
-# GEMINI CONFIG
-# ---------------------------
-genai.configure(api_key="AIzaSyBs9JPqB5FgPTAxSk0Xd75QrMLwmfhI81Q")
+load_dotenv()
+api_key = os.getenv("API_KEY")
+genai.configure(api_key=api_key)
 gemini_model = genai.GenerativeModel("gemini-2.0-flash")
 
 app = FastAPI(title="Resume Evaluator Clean Version")
@@ -56,9 +60,7 @@ class AnalyzeResult(BaseModel):
     improvements: List[dict]
 
 
-# ---------------------------
-# PDF TEXT EXTRACTION
-# ---------------------------
+
 def extract_text_from_pdf(path: str) -> str:
     text = ""
     with pdfplumber.open(path) as pdf:
@@ -116,9 +118,7 @@ Rules:
     return json.loads(clean_json)
 
 
-# ---------------------------
-# API ENDPOINT
-# ---------------------------
+
 @app.post("/analyze", response_model=AnalyzeResult)
 async def analyze_resume(
         jd_text: str = Form(...),
@@ -135,9 +135,7 @@ async def analyze_resume(
     return result
 
 
-# ---------------------------
-# RUN
-# ---------------------------
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
