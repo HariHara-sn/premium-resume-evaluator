@@ -41,10 +41,11 @@ import pdfplumber
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+
 load_dotenv()
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
-gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 app = FastAPI(title="Resume Evaluator Clean Version")
 
