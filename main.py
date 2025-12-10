@@ -1,140 +1,60 @@
-# #---------------------------------------------------------------------------------------------------------
-# # from fastapi import FastAPI, Form
-# # from pydantic import BaseModel
-# # from google import generativeai as genai
-# from dotenv import load_dotenv
-# import os
-# load_dotenv()
-# api_key = os.getenv("API_KEY")
-# genai.configure(api_key=api_key)
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routers import chatbot, ats_resume_builder, job_detector, compare_resumes, interview_questions, resume_analyzer
 
-# # model = genai.GenerativeModel("models/gemini-2.5-flash")
+# Create main FastAPI app
+app = FastAPI(
+    title="Resume & Career Tools API",
+    description="Comprehensive API for resume analysis, ATS optimization, job detection, interview preparation, and career chatbot",
+    version="1.0.0"
+)
 
-# # app = FastAPI()
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# # class AIRequest(BaseModel):
-# #     prompt: str
-
-
-# # data = {
-# #     "Hari" : "software engineer",
-# #     "location" : "canada"
-# # }
-# # @app.post("/ai")
-# # def ai(req: AIRequest):
-# #     print("Received prompt:", req.prompt)
-# #     response = model.generate_content(req.prompt)
-# #     print("Generated response:", response.text)
-# #     data["response"] = response.text
-# #     return data
-#---------------------------------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------------------------------------------
-#below code is for direct JD and Resume parsing to LLM
-import os
-import json
-import tempfile
-from typing import List
-from fastapi import FastAPI, File, UploadFile, Form
-from pydantic import BaseModel
-import pdfplumber
-from dotenv import load_dotenv
-import google.generativeai as genai
+# Include all routers
+app.include_router(chatbot.router)
+app.include_router(ats_resume_builder.router)
+app.include_router(job_detector.router)
+app.include_router(compare_resumes.router)
+app.include_router(interview_questions.router)
+app.include_router(resume_analyzer.router)
 
 
-load_dotenv()
-api_key = os.getenv("API_KEY")
-genai.configure(api_key=api_key)
-gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-
-app = FastAPI(title="Resume Evaluator Clean Version")
-
-
-# ---------------------------
-# OUTPUT MODEL
-# ---------------------------
-class AnalyzeResult(BaseModel):
-    verdict: str
-    match_score: float
-    missing_skills: List[str]
-    one_tip: str
-    improvements: List[dict]
-
-
-
-def extract_text_from_pdf(path: str) -> str:
-    text = ""
-    with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
-    return text
-
-
-# ---------------------------
-# LLM EVALUATION
-# ---------------------------
-def evaluate_resume_with_llm(resume_text: str, jd_text: str) -> dict:
-    prompt = f"""
-You are an expert resume evaluator. 
-Your job is to MATCH the resume to the Job Description (JD) and output ONLY valid JSON.
-
--------------------------
-RESUME:
-{resume_text}
-
--------------------------
-JOB DESCRIPTION:
-{jd_text}
-
--------------------------
-Return STRICT JSON in this format:
-
-{{
-  "verdict": "Shortlisted / Average / Rejected",
-  "match_score": 0,
-  "missing_skills": [],
-  "one_tip": "",
-  "improvements": [
-    {{"area": "skill/experience/education", "suggestion": "specific improvement suggestion"}}
-]
-}}
-Rules:
-- match_score must be a number 0–100
-- missing_skills: only JD-required skills missing in resume
-- one_tip: single best improvement tip
-- improvements: 2–4 specific improvement items
-- DO NOT include any explanations or text outside the JSON
-"""
-
-    response = gemini_model.generate_content(prompt)
-    raw = response.text.strip()
-
-    # extract JSON properly
-    json_start = raw.find("{")
-    json_end = raw.rfind("}")
-    clean_json = raw[json_start:json_end + 1]
-
-    return json.loads(clean_json)
-
-
-
-@app.post("/analyze", response_model=AnalyzeResult)
-async def analyze_resume(
-        jd_text: str = Form(...),
-        resume_file: UploadFile = File(...)
-):
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    tmp.write(await resume_file.read())
-    tmp.flush()
-
-    resume_text = extract_text_from_pdf(tmp.name)
-
-    result = evaluate_resume_with_llm(resume_text, jd_text)
-
-    return result
-
+@app.get("/")
+async def root():
+    """API root endpoint with information about available routes"""
+    return {
+        "message": "Resume & Career Tools API",
+        "version": "1.0.0",
+        "endpoints": {
+            "chatbot": {
+                "POST /chatbot": "Ask questions about resume and JD"
+            },
+            "ats_resume": {
+                "POST /rewrite-resume": "Rewrite and optimize resume based on JD"
+            },
+            "job_detector": {
+                "POST /job-detector": "Detect suitable job roles from resume"
+            },
+            "compare_resumes": {
+                "POST /compare-resumes": "Compare multiple resumes"
+            },
+            "interview_questions": {
+                "POST /interview-questions/generate": "Generate interview questions based on resume and JD"
+            },
+            "analyze": {
+                "POST /analyze": "Analyze resume match against job description"
+            }
+        },
+        "documentation": "/docs"
+    }
 
 
 if __name__ == "__main__":
