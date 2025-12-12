@@ -87,16 +87,15 @@ async def analyze_resume(
     try:
         tmp.write(await resume_file.read())
         tmp.flush()
-        tmp.close()  # Close the file handle before using it elsewhere
+        tmp.close()  
         
         resume_text = extract_text_from_pdf(tmp_path)
         result = evaluate_resume_with_llm(resume_text, jd_text)
         return result
     finally:
-        # Clean up temp file
         if os.path.exists(tmp_path):
             try:
                 os.remove(tmp_path)
             except Exception:
-                pass  # Ignore deletion errors on Windows
+                pass  
 

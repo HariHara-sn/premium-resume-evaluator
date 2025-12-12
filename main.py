@@ -2,23 +2,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import chatbot, ats_resume_builder, job_detector, compare_resumes, interview_questions, resume_analyzer
 
-# Create main FastAPI app
 app = FastAPI(
     title="Resume & Career Tools API",
     description="Comprehensive API for resume analysis, ATS optimization, job detection, interview preparation, and career chatbot",
     version="1.0.0"
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include all routers
+
 app.include_router(chatbot.router)
 app.include_router(ats_resume_builder.router)
 app.include_router(job_detector.router)

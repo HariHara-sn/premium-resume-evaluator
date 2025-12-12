@@ -34,9 +34,21 @@ def rewrite_resume(resume_text, jd_text):
     prompt = f"""
 You are an expert ATS resume optimizer.
 
-Rewrite the resume so it strongly aligns with the Job Description.
+Rewrite the resume so it aligns with the Job Description, but keep the content 
+SHORT, PRECISE, and CRISP.
 
-STRICT JSON OUTPUT ONLY:
+STRICT INSTRUCTIONS:
+- SUMMARY must be max 3 lines.
+- Each bullet must be max 12–14 words.
+- Do NOT produce long paragraphs.
+- NO story-like language.
+- NO filler phrases (avoid dynamic, passionate, enthusiastic, etc.).
+- NO exaggerations.
+- No invented companies, projects, or achievements.
+- Use only information found in the original resume.
+- Missing fields should be ignored.
+
+OUTPUT MUST BE STRICT JSON ONLY:
 
 {{
   "name": "",
@@ -71,19 +83,13 @@ STRICT JSON OUTPUT ONLY:
   "interests": []
 }}
 
-Rules:
-- No hallucinations.
-- Do NOT invent fake companies or projects.
-- Enhance bullets with strong action verbs.
-- Add JD keywords only if relevant.
-- JSON ONLY. No markdown.
-
-Resume:
+Resume Content:
 {resume_text}
 
 Job Description:
 {jd_text}
 """
+
 
     response = model.generate_content(prompt)
     return response.text
@@ -96,25 +102,25 @@ def generate_modern_pdf(data):
     styles = getSampleStyleSheet()
     story = []
 
-    # Name
+    
     story.append(Paragraph(data["name"], styles["Title"]))
     story.append(Spacer(1, 12))
 
-    # Title
+    
     story.append(Paragraph(data["title"], styles["Heading2"]))
     story.append(Spacer(1, 12))
 
-    # Summary
+    
     story.append(Paragraph("Summary", styles["Heading3"]))
     story.append(Paragraph(data["summary"], styles["Normal"]))
     story.append(Spacer(1, 12))
 
-    # Skills
+    
     story.append(Paragraph("Skills", styles["Heading3"]))
     story.append(Paragraph(", ".join(data["skills"]), styles["Normal"]))
     story.append(Spacer(1, 12))
 
-    # Experience
+    
     story.append(Paragraph("Experience", styles["Heading3"]))
     for exp in data["experience"]:
         story.append(Paragraph(
@@ -125,7 +131,7 @@ def generate_modern_pdf(data):
             story.append(Paragraph(f"• {point}", styles["Normal"]))
         story.append(Spacer(1, 10))
 
-    # Projects
+    
     story.append(Paragraph("Projects", styles["Heading3"]))
     for proj in data["projects"]:
         story.append(Paragraph(f"{proj['title']} ({proj['date']})", styles["Heading4"]))
@@ -133,7 +139,7 @@ def generate_modern_pdf(data):
             story.append(Paragraph(f"• {point}", styles["Normal"]))
         story.append(Spacer(1, 10))
 
-    # Education
+    
     story.append(Paragraph("Education", styles["Heading3"]))
     for edu in data["education"]:
         story.append(Paragraph(
@@ -142,14 +148,12 @@ def generate_modern_pdf(data):
         ))
         story.append(Spacer(1, 8))
 
-    # Achievements
     if data["achievements"]:
         story.append(Paragraph("Achievements", styles["Heading3"]))
         for ach in data["achievements"]:
             story.append(Paragraph(f"• {ach}", styles["Normal"]))
         story.append(Spacer(1, 10))
 
-    # Interests
     if data["interests"]:
         story.append(Paragraph("Interests", styles["Heading3"]))
         story.append(Paragraph(", ".join(data["interests"]), styles["Normal"]))
@@ -158,47 +162,35 @@ def generate_modern_pdf(data):
     return temp_output
 
 
-# -----------------------------------
-# FASTAPI ENDPOINT
-# -----------------------------------
 @router.post("")
 async def rewrite_resume_api(
     file: UploadFile = File(...),
     jd_text: str = Form(...)
 ):
-    # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         temp_file.write(await file.read())
         temp_path = temp_file.name
 
     try:
-        # Extract resume text
         resume_text = extract_text(temp_path)
 
-        # Rewrite using Gemini
         rewritten = rewrite_resume(resume_text, jd_text)
 
-        # Remove extra markdown
         rewritten = re.sub(r"^```(?:json)?\s*\n?", "", rewritten)
         rewritten = re.sub(r"\n?```\s*$", "", rewritten)
 
-        # Parse JSON
         data = json.loads(rewritten)
 
-        # Generate Modern Resume PDF
         final_pdf_path = generate_modern_pdf(data)
 
-        # Return PDF file to user
         return FileResponse(
             final_pdf_path,
             media_type="application/pdf",
             filename="Modern_Resume.pdf"
         )
     finally:
-        # Clean up temp file
         try:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
         except Exception:
-            pass  # Ignore deletion errors
-
+            pass  
