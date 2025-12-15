@@ -21,13 +21,9 @@ genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# Create router
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
 
-# --------------------------
-# PDF → TEXT
-# --------------------------
 def extract_pdf_text(file_path):
     text = ""
     with pdfplumber.open(file_path) as pdf:
@@ -38,9 +34,6 @@ def extract_pdf_text(file_path):
     return text
 
 
-# --------------------------
-# LLM Answer Generator
-# --------------------------
 def answer_question(question, resume_text, jd_text):
     prompt = f"""
 You are an expert career advisor AI.
@@ -68,16 +61,12 @@ Your job:
     return resp.text.strip()
 
 
-# --------------------------
-# FASTAPI ENDPOINT
-# --------------------------
 @router.post("")
 async def ask_resume_question(
     resume_file: UploadFile,
     jd_text: str = Form(...),
     question: str = Form(...)
 ):
-    # Save file temporarily
     temp_path = f"temp_{resume_file.filename}"
     with open(temp_path, "wb") as f:
         f.write(await resume_file.read())
@@ -91,10 +80,10 @@ async def ask_resume_question(
             "answer": answer
         })
     finally:
-        # Clean up temp file
+    
         try:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
         except Exception:
-            pass  # Ignore deletion errors on Windows
+            pass  
 

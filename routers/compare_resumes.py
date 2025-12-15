@@ -12,13 +12,10 @@ genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# Create router
 router = APIRouter(prefix="/compare-resumes", tags=["Resume Comparison"])
 
 
-# ------------------------
-# Extract text from PDF
-# ------------------------
+
 def extract_text_from_pdf(file_bytes):
     file_bytes.seek(0)  # IMPORTANT
     text = ""
@@ -29,10 +26,6 @@ def extract_text_from_pdf(file_bytes):
                 text += p + "\n"
     return text.strip()
 
-
-# ------------------------
-# Compare resumes with Gemini
-# ------------------------
 def compare_resumes(resume_dict):
 
     prompt = f"""
@@ -82,9 +75,6 @@ Resumes Provided:
     return json.loads(clean)
 
 
-# ------------------------
-# API endpoint
-# ------------------------
 @router.post("")
 async def compare_resumes_api(files: List[UploadFile] = File(...)):
     resume_text_map = {}

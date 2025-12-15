@@ -7,20 +7,15 @@ import tempfile
 import os
 from dotenv import load_dotenv
 
-# Load API key
 load_dotenv()
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# Create router
 router = APIRouter(prefix="/job-detector", tags=["Job Detector"])
 
 
-# --------------------------
-# Extract Resume Text
-# --------------------------
 def extract_text(pdf_path):
     text = ""
     with pdfplumber.open(pdf_path) as pdf:
@@ -31,9 +26,6 @@ def extract_text(pdf_path):
     return text
 
 
-# --------------------------
-# JOB DETECTOR USING LLM
-# --------------------------
 def detect_job_role(resume_text):
     prompt = f"""
 You are an expert HR recruiter and job classification system.
@@ -64,16 +56,12 @@ Resume:
     response = model.generate_content(prompt)
     output = response.text
 
-    # Clean accidental markdown
     output = re.sub(r'^```(?:json)?\s*\n?', '', output)
     output = re.sub(r'\n?```\s*$', '', output)
 
     return json.loads(output)
 
 
-# --------------------------
-# FASTAPI ENDPOINT
-# --------------------------
 @router.post("")
 async def job_detector_api(file: UploadFile = File(...)):
     # Save uploaded file temporarily
@@ -82,10 +70,8 @@ async def job_detector_api(file: UploadFile = File(...)):
         temp_path = temp_file.name
 
     try:
-        # Extract text
         resume_text = extract_text(temp_path)
 
-        # LLM processing
         result = detect_job_role(resume_text)
 
         return result
