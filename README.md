@@ -10,7 +10,7 @@ The system analyzes resumes and job descriptions to provide actionable insights 
 
 Watch the complete working demo of Career Compass:
 
-**[Demo Video – Google Drive Link]**
+**[https://drive.google.com/file/d/1medUs4d1PV6dwEzO7ZU4gPbOlrg_izEf/view?usp=drivesdk]**
 
 ---
 
@@ -212,3 +212,4 @@ python main.py
 ## 📌 Conclusion
 
 Career Compass is not just a resume checker — it is a **complete AI-powered career assistant** that helps students understand job readiness, improve applications, and prepare for interviews.
+
